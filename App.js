@@ -10,7 +10,7 @@ Contents:
 > useContext API 
 > Build (EAS) 
 > Authenthication (expo-auth-session, Google Console, Firebase) 
-> Swipeable cards 
+> Swipeable cards (react-native-deck-swiper) 
 > Matching algorithm 
 > 1-on-1 private messaging 
 */ 

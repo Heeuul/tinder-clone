@@ -44,7 +44,6 @@ export const AuthProvider = ({children}) =>
         const { idToken, accessToken } = loginResult.authentication; 
         const credential = GoogleAuthProvider.credential(idToken, accessToken); 
         
-        console.log("Updating Firebase Auth"); 
         signInWithCredential(auth, credential); 
       } 
       
