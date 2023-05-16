@@ -1,14 +1,21 @@
-import { View, Text } from 'react-native'; 
+import { View, Text, Button } from 'react-native'; 
 import React from 'react'; 
 
-import GoogleLoginButton from '../components/googleLoginButton'; 
+import useAuth from '../hooks/useAuth'; 
+import { useNavigation } from '@react-navigation/native';
 
 export default function LoginScreen() 
 {
+  const { LoginWithGoogle, loading } = useAuth(); 
+  const navigation = useNavigation(); 
+
   return (
     <View>
-      <Text>LoginScreen</Text> 
-      <GoogleLoginButton /> 
+      <Text>{loading ? "Loading..." : "LoginScreen"}</Text> 
+      <Button 
+        title='Login with Google' 
+        onPress={() => LoginWithGoogle() } 
+      /> 
     </View>
   ); 
-}
+}; 

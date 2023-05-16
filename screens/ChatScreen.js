@@ -8,4 +8,4 @@ export default function ChatScreen()
       <Text>ChatScreen</Text>
     </View>
   ); 
-}
+}; 
