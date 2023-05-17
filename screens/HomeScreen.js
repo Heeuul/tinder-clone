@@ -3,7 +3,7 @@ import { AntDesign, Entypo, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { useNavigation } from '@react-navigation/native'; 
 import Swiper from 'react-native-deck-swiper'; 
-import React from 'react'; 
+import React, { useRef } from 'react'; 
 
 import useAuth from '../hooks/useAuth'; 
 
@@ -103,6 +103,7 @@ export default function HomeScreen()
 {
   const navigation = useNavigation(); 
   const { user, Logout } = useAuth(); 
+  const swipeRef = useRef(null); 
 
   return (
     <SafeAreaView className="flex-1"> 
@@ -115,7 +116,7 @@ export default function HomeScreen()
           /> 
         </TouchableOpacity> 
         
-        <TouchableOpacity> 
+        <TouchableOpacity onPress={() => navigation.navigate("Modal")}> 
           <Image 
             source={require("../images/logo.png")} 
             className="h-14 w-14 rounded-full" 
@@ -135,11 +136,28 @@ export default function HomeScreen()
       {/* Cards */} 
       <View className="flex-1 -mt-6"> 
         <Swiper 
+          ref={swipeRef} 
           cards={DUMMY_DATA} 
           containerStyle={{backgroundColor: "transparent"}} 
           stackSize={5} 
           animateCardOpacity 
           verticalSwipe={false} 
+          overlayLabels=
+          {{
+            left: 
+            {
+              title: "NOPE", 
+              style: { label: { textAlign: "right", color: "lightcoral", }, }, 
+            }, 
+            right: 
+            {
+              title: "MATCH", 
+              style: { label: { color: "darkseagreen", }, }, 
+            }, 
+          }} 
+          onSwipedLeft={() => console.log("Swiped PASS")} 
+          onSwipedRight={() => console.log("Swiped MATCH")} 
+          backgroundColor='#4FD0E9' 
           renderCard={card => 
           (
             <View key={card.id} className="relative bg-white h-3/4 rounded-xl"> 
@@ -148,7 +166,7 @@ export default function HomeScreen()
                 className="absolute h-full w-full rounded-xl top-0" 
               /> 
 
-              <View className="absolute bg-white bottom-0 w-full flex-row justify-between h-20 px-6 py-2 rounded-b-xl overflow-visible shadow-xl"> 
+              <View className="absolute bg-white bottom-0 w-full flex-row items-center justify-between h-20 px-6 py-2 rounded-b-xl overflow-visible shadow-xl"> 
                 <View> 
                   <Text className="text-xl font-bold">{card.firstName} {card.lastName}</Text> 
                   <Text>{card.occupation}</Text> 
@@ -158,6 +176,21 @@ export default function HomeScreen()
             </View> 
           )} 
         /> 
+      </View> 
+
+      <View className="flex-row justify-evenly pb-5"> 
+        <TouchableOpacity 
+          className="items-center justify-center rounded-full w-16 h-16 bg-red-200" 
+          onPress={() => swipeRef.current.swipeLeft()} 
+          > 
+          <Entypo name='cross' size={24} color={"red"} /> 
+        </TouchableOpacity> 
+        <TouchableOpacity 
+          className="items-center justify-center rounded-full w-16 h-16 bg-green-200" 
+          onPress={() => swipeRef.current.swipeRight()} 
+        > 
+          <AntDesign name='heart' size={24}  color={"green"}/> 
+        </TouchableOpacity> 
       </View> 
     </SafeAreaView>
   ); 
