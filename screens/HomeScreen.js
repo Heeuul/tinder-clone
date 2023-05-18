@@ -1,109 +1,102 @@
+import { collection, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, where } from 'firebase/firestore'; 
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'; 
 import { View, Text, TouchableOpacity, Image } from 'react-native'; 
 import { AntDesign, Entypo, Ionicons } from '@expo/vector-icons'; 
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { useNavigation } from '@react-navigation/native'; 
 import Swiper from 'react-native-deck-swiper'; 
-import React, { useRef } from 'react'; 
+import { db } from '../firebase'; 
 
 import useAuth from '../hooks/useAuth'; 
-
-const DUMMY_DATA = 
-[
-  {
-    id: 1, 
-    firstName: "Thomas", 
-    lastName: "Miller", 
-    occupation: "Signal and Track Switch Repairer", 
-    photoURL: "https://www.fakepersongenerator.com/Face/male/male20151083594850952.jpg", 
-    age: 30, 
-  }, 
-  {
-    id: 2, 
-    firstName: "Barbara", 
-    lastName: "Hendrickson", 
-    occupation: "Skincare Specialist", 
-    photoURL: "https://www.fakepersongenerator.com/Face/female/female10221841618.jpg", 
-    age: 44, 
-  }, 
-  {
-    id: 3, 
-    firstName: "Jovita", 
-    lastName: "Currie", 
-    occupation: "Skincare Specialist", 
-    photoURL: "https://www.fakepersongenerator.com/Face/female/female20151024199909973.jpg", 
-    age: 29, 
-  }, 
-  {
-    id: 4, 
-    firstName: "Jeanne", 
-    lastName: "Whitehead", 
-    occupation: "Insurance Sales Agent", 
-    photoURL: "https://www.fakepersongenerator.com/Face/female/female1021482539795.jpg", 
-    age: 32, 
-  }, 
-  {
-    id: 5, 
-    firstName: "Barry", 
-    lastName: "Brown", 
-    occupation: "First-Line Supervisors of Police and Detective", 
-    photoURL: "https://www.fakepersongenerator.com/Face/male/male1085647567596.jpg", 
-    age: 47, 
-  }, 
-  {
-    id: 6, 
-    firstName: "Edward", 
-    lastName: "Crawford", 
-    occupation: "Nuclear Medicine Technologist", 
-    photoURL: "https://www.fakepersongenerator.com/Face/male/male108578967902.jpg", 
-    age: 37, 
-  }, 
-  {
-    id: 7, 
-    firstName: "John", 
-    lastName: "Gilbert", 
-    occupation: "Prosthodontist", 
-    photoURL: "https://www.fakepersongenerator.com/Face/male/male1084775750458.jpg", 
-    age: 35, 
-  }, 
-  {
-    id: 8, 
-    firstName: "Janet", 
-    lastName: "Imel", 
-    occupation: "Interior Designer", 
-    photoURL: "https://www.fakepersongenerator.com/Face/female/female20091023325237976.jpg", 
-    age: 26, 
-  }, 
-  {
-    id: 9, 
-    firstName: "Laverne", 
-    lastName: "Delacruz", 
-    occupation: "Midwive", 
-    photoURL: "https://www.fakepersongenerator.com/Face/female/female201610250091.jpg", 
-    age: 29, 
-  }, 
-  {
-    id: 10, 
-    firstName: "Marc", 
-    lastName: "Casper", 
-    occupation: "Security Guard", 
-    photoURL: "https://www.fakepersongenerator.com/Face/male/male20161086397872161.jpg", 
-    age: 39, 
-  }, 
-  {
-    id: 11, 
-    firstName: "Keith", 
-    lastName: "Flanigan", 
-    occupation: "Tax Preparer", 
-    photoURL: "https://www.fakepersongenerator.com/Face/male/male20121083483988281.jpg", 
-    age: 41, 
-  }, 
-]; 
+import GenerateID from '../lib/GenerateID';
 
 export default function HomeScreen() 
 {
   const navigation = useNavigation(); 
   const { user, Logout } = useAuth(); 
+  const [profiles, SetProfiles] = useState([]); 
   const swipeRef = useRef(null); 
+
+  useLayoutEffect(() => onSnapshot(doc(db, "users", user.uid), snapshot => 
+  {
+    if(!snapshot.exists()) 
+      navigation.navigate("Modal"); 
+  }), []); 
+
+  useEffect(() => 
+  {
+    let unsub; 
+
+    async function FetchCards() 
+    {
+      const passes = await getDocs(collection(db, "users", user.uid, "passes")).then(snapshot => snapshot.docs.map(doc => doc.id)); 
+      const passedUserIDs = passes.length > 0 ? passes : ["test"]; 
+
+      unsub = onSnapshot(query(collection(db, "users"), where("id", "not-in", [...passedUserIDs])), snapshot => 
+      {
+        SetProfiles(snapshot.docs.filter(doc => doc.id !== user.uid) 
+                                 .map(doc => 
+                                  ({ 
+                                    id: doc.id, 
+                                    ...doc.data(), 
+                                  }))); 
+      }); 
+    }; 
+    
+    FetchCards(); 
+    return unsub; 
+  }, []); 
+
+  function SwipeLeft(cardIndex) 
+  {
+    if(!profiles[cardIndex]) return; 
+
+    const userSwiped = profiles[cardIndex]; 
+    
+    console.log("You swiped PASS on " + userSwiped.displayName); 
+    setDoc(doc(db, "users", user.uid, "passes", userSwiped.id), userSwiped); 
+  }
+  async function SwipeRight(cardIndex) 
+  {
+    if(!profiles[cardIndex]) return; 
+    
+    const userSwiped = profiles[cardIndex]; 
+    const loggedInProfile = await(await getDoc(doc(db, "users", user.uid))).data(); 
+
+    // Check if user swiped on you (do in cloud server if possible) 
+    getDoc(doc(db, "users", userSwiped.id, "swipes", user.uid)).then(docSnapshot => 
+    {
+      if(docSnapshot.exists()) 
+      {
+        // User has matched previously before you matched them 
+        console.log("You matched with " + userSwiped.displayName); 
+        
+        // Create a MATCH in db 
+        setDoc(doc(db, "matches", GenerateID(user.uid, userSwiped.id)), 
+        {
+          users: 
+          {
+            [user.uid]: loggedInProfile, 
+            [userSwiped.id]: userSwiped, 
+          }, 
+          usersMatched: [user.uid, userSwiped.id], 
+          timestamp: serverTimestamp(), 
+        }); 
+
+        navigation.navigate("Match", { loggedInProfile, userSwiped, }); 
+      }
+      else 
+      {
+        // You swiping first or not getting swiped on 
+        console.log("You swiped on " + userSwiped.displayName + `(${userSwiped.job})`); 
+      }
+      
+      setDoc(doc(db, "users", user.uid, "swipes", userSwiped.id), userSwiped); 
+    }); 
+    
+    console.log("You swiped MATCH on " + userSwiped.displayName + `(${userSwiped.job})`); 
+    setDoc(doc(db, "users", user.uid, "matches", userSwiped.id), userSwiped); 
+  }
 
   return (
     <SafeAreaView className="flex-1"> 
@@ -137,7 +130,7 @@ export default function HomeScreen()
       <View className="flex-1 -mt-6"> 
         <Swiper 
           ref={swipeRef} 
-          cards={DUMMY_DATA} 
+          cards={profiles} 
           containerStyle={{backgroundColor: "transparent"}} 
           stackSize={5} 
           animateCardOpacity 
@@ -155,10 +148,10 @@ export default function HomeScreen()
               style: { label: { color: "darkseagreen", }, }, 
             }, 
           }} 
-          onSwipedLeft={() => console.log("Swiped PASS")} 
-          onSwipedRight={() => console.log("Swiped MATCH")} 
+          onSwipedLeft={(cardIndex) => SwipeLeft(cardIndex)} 
+          onSwipedRight={(cardIndex) => SwipeRight(cardIndex)} 
           backgroundColor='#4FD0E9' 
-          renderCard={card => 
+          renderCard={card => card ? 
           (
             <View key={card.id} className="relative bg-white h-3/4 rounded-xl"> 
               <Image 
@@ -168,11 +161,20 @@ export default function HomeScreen()
 
               <View className="absolute bg-white bottom-0 w-full flex-row items-center justify-between h-20 px-6 py-2 rounded-b-xl overflow-visible shadow-xl"> 
                 <View> 
-                  <Text className="text-xl font-bold">{card.firstName} {card.lastName}</Text> 
+                  <Text className="text-xl font-bold">{card.displayName}</Text> 
                   <Text>{card.occupation}</Text> 
                 </View> 
                 <Text className="text-2xl">{card.age}</Text> 
               </View> 
+            </View> 
+          ) : (
+            <View className="relative bg-white h-3/4 rounded-xl justify-center items-center overflow-visible shadow-xl"> 
+              <Text className="font-bold pb-5">No more profiles</Text> 
+              <Image 
+                className="h-20 w-full" 
+                style={{resizeMode: 'contain'}} 
+                source={{uri: "https://links.papareact.com/6gb"}} 
+              /> 
             </View> 
           )} 
         /> 

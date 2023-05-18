@@ -3,15 +3,17 @@ import React, { useLayoutEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native'; 
 
 import useAuth from '../hooks/useAuth';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function ModalScreen() 
 {
   const { user } = useAuth(); 
   const navigation = useNavigation(); 
   
-  const [image, setImage] = useState(null); 
-  const [job, setJob] = useState(null); 
-  const [age, setAge] = useState(null); 
+  const [image, SetImage] = useState(null); 
+  const [job, SetJob] = useState(null); 
+  const [age, SetAge] = useState(null); 
 
   const incompleteForm = !image || !job || !age; 
 
@@ -26,9 +28,23 @@ export default function ModalScreen()
     }); 
   }, []); 
 
-  function updateUserProfile() 
+  function UpdateUserProfile() 
   {
-    
+    setDoc(doc(db, "users", user.uid), 
+    {
+      id: user.uid, 
+      displayName: user.displayName, 
+      photoURL: image, 
+      job: job, 
+      age: age, 
+      timestamp: serverTimestamp()
+    }).then(() => 
+    {
+      navigation.navigate("Home"); 
+    }).catch(error => 
+    {
+      alert(error.message); 
+    }); 
   }; 
   
   return (
@@ -47,7 +63,7 @@ export default function ModalScreen()
       </Text> 
       <TextInput 
         value={image} 
-        onChangeText={text => setImage(text)} 
+        onChangeText={text => SetImage(text)} 
         className="text-center text-xl pb-2" 
         placeholder='Enter a Profile Pic URL' 
       /> 
@@ -57,7 +73,7 @@ export default function ModalScreen()
       </Text> 
       <TextInput 
         value={job} 
-        onChangeText={text => setJob(text)} 
+        onChangeText={text => SetJob(text)} 
         className="text-center text-xl pb-2" 
         placeholder='Enter your occupation' 
       /> 
@@ -67,7 +83,7 @@ export default function ModalScreen()
       </Text> 
       <TextInput 
         value={age} 
-        onChangeText={text => setAge(text)} 
+        onChangeText={text => SetAge(text)} 
         className="text-center text-xl pb-2" 
         placeholder='Enter your Age' 
         keyboardType='numeric'
@@ -77,6 +93,7 @@ export default function ModalScreen()
       <TouchableOpacity 
         className={`w-64 p-3 rounded-xl absolute bottom-10 ${incompleteForm ? "bg-gray-400" : "bg-red-400"}`} 
         disabled={incompleteForm} 
+        onPress={() => UpdateUserProfile()} 
       > 
         <Text className="text-center text-white text-xl">Update Profile</Text> 
       </TouchableOpacity> 
