@@ -99,4 +99,4 @@ export default function ModalScreen()
       </TouchableOpacity> 
     </View> 
   ); 
-}; 
+} 
