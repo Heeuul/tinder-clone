@@ -3,5 +3,7 @@
   "files.associations": {
     ".js": "javascriptreact",
     ".jsx": "javscriptreact"
-  }
+  },
+  "java.compile.nullAnalysis.mode": "automatic",
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

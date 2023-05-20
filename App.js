@@ -1,7 +1,7 @@
-import { NavigationContainer } from '@react-navigation/native'; 
+import { NavigationContainer } from "@react-navigation/native";
 
-import { AuthProvider } from './hooks/useAuth'; 
-import StackNavigator from './StackNavigator'; 
+import { AuthProvider } from "./hooks/useAuth";
+import StackNavigator from "./StackNavigator";
 
 /* 
 Contents: 
@@ -13,15 +13,14 @@ Contents:
 > Swipeable cards (react-native-deck-swiper) 
 > Matching algorithm 
 > 1-on-1 private messaging 
-*/ 
+*/
 
-export default function App() 
-{
+export default function App() {
   return (
-    <NavigationContainer> 
-      <AuthProvider> 
-        <StackNavigator /> 
-      </AuthProvider> 
-    </NavigationContainer> 
-  ); 
-} 
+    <NavigationContainer>
+      <AuthProvider>
+        <StackNavigator />
+      </AuthProvider>
+    </NavigationContainer>
+  );
+}

@@ -182,7 +182,7 @@ export default function HomeScreen() {
                     <Text className="text-xl font-bold">
                       {card.displayName}
                     </Text>
-                    <Text>{card.occupation}</Text>
+                    <Text className="font-light">{card.job}</Text>
                   </View>
                   <Text className="text-2xl">{card.age}</Text>
                 </View>

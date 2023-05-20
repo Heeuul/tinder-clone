@@ -1,3 +1,11 @@
+import {
+  addDoc,
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+} from "firebase/firestore";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
@@ -11,13 +19,14 @@ import {
   FlatList,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import useAuth from "../hooks/useAuth";
 import Header from "../components/Header";
 import GetMatchedUserInfo from "../lib/GetMatchedUserInfo";
 import SenderMessage from "../components/SenderMessage";
 import ReceiverMessage from "../components/ReceiverMessage";
+import { db } from "../firebase";
 
 export default function MessageScreen() {
   const { user } = useAuth();
@@ -26,7 +35,36 @@ export default function MessageScreen() {
   const [messages, SetMessages] = useState([]);
 
   const { matchDetails } = params;
-  function SendMessage() {}
+
+  useEffect(
+    () =>
+      onSnapshot(
+        query(
+          collection(db, "matches", matchDetails.id, "messages"),
+          orderBy("timestamp", "desc")
+        ),
+        (snapshot) =>
+          SetMessages(
+            snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+          )
+      ),
+    [matchDetails, db]
+  );
+
+  function SendMessage() {
+    addDoc(collection(db, "matches", matchDetails.id, "messages"), {
+      timestamp: serverTimestamp(),
+      userID: user.uid,
+      displayName: user.displayName,
+      photoURL: matchDetails.users[user.uid].photoURL,
+      message: input,
+    });
+
+    SetInput("");
+  }
 
   return (
     <SafeAreaView className="flex-1">
@@ -44,9 +82,10 @@ export default function MessageScreen() {
           <FlatList
             className="pl-4"
             data={messages}
+            inverted={-1}
             keyExtractor={(item) => item.id}
             renderItem={({ item: message }) =>
-              messages.userID === user.uid ? (
+              message.userID === user.uid ? (
                 <SenderMessage key={message.id} message={message} />
               ) : (
                 <ReceiverMessage key={message.id} message={message} />
@@ -59,11 +98,11 @@ export default function MessageScreen() {
           <TextInput
             className="h-10 text-lg"
             placeholder="Send Message..."
-            onChange={SetInput}
+            onChangeText={SetInput}
             onSubmitEditing={SendMessage}
             value={input}
           />
-          <TouchableOpacity>
+          <TouchableOpacity onPress={SendMessage}>
             <Text className="text-[#FF5864] text-lg">Send</Text>
           </TouchableOpacity>
         </View>
